@@ -9,6 +9,9 @@ const app = next({ dev });
 const handler = app.getRequestHandler();
 
 const rooms = new Set<string>(["general"]);
+const history: Record<string, { name: string; text: string }[]> = {
+  general: [],
+};
 async function startServer() {
   try {
     await app.prepare();
@@ -19,7 +22,8 @@ async function startServer() {
       //i need to start as general
       socket.join("general");
       socket.data.room = "general";
-      socket.emit("rooms",[...rooms])
+      socket.emit("rooms", [...rooms]);
+      socket.emit("history", history["general"]);
       //helper function for leavving the room
       function switchRooms(room: string) {
         socket.leave(socket.data.room);
@@ -32,9 +36,10 @@ async function startServer() {
           return callback({ ok: false, error: "room already exiets" });
         }
         rooms.add(room);
+        history[room] = [];
         switchRooms(room);
-        io.emit("rooms",[...rooms])
-        callback({ ok: true });
+        io.emit("rooms", [...rooms]);
+        callback({ ok: true, history: history[room] });
       });
       //jion a room
       socket.on("join", (room, callback) => {
@@ -42,9 +47,10 @@ async function startServer() {
           return callback({ ok: false, error: "room doesnt exits" });
         }
         switchRooms(room);
-        callback({ ok: true });
+        callback({ ok: true, history: history[room] });
       });
       socket.on("message", (msg) => {
+        history[socket.data.room].push(msg);
         io.to(socket.data.room).emit("message", msg);
       });
       socket.on("disconnect", () => {

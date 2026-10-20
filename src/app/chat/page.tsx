@@ -26,6 +26,9 @@ const ChatPage = () => {
     socket.on("rooms", (list: string[]) => {
       setRooms(list);
     });
+    socket.on("history", (list: Message[]) => {
+      setMessage(list);
+    });
     return () => {
       socket.disconnect();
     };
@@ -40,10 +43,10 @@ const ChatPage = () => {
     socketRef.current?.emit(
       action,
       target,
-      (res: { ok: boolean; error?: string }) => {
+      (res: { ok: boolean; error?: string; history?: Message[] }) => {
         if (res.ok) {
           setRoom(target);
-          setMessage([]);
+          setMessage(res.history ?? []);
           setRoomInput("");
         } else {
           setError(res.error || "something went wrong ");
@@ -62,25 +65,25 @@ const ChatPage = () => {
   }
   return (
     <div className=" flex ">
-      {" "}<aside className="w-48 border-r p-3">
-          <h2 className="mb-2 font-bold">Rooms</h2>
-          <ul className="flex flex-col gap-1">
-            {rooms.map((r) => (
-              <li key={r}>
-                <button
-                  onClick={() => ChangeRoom("join", r)}
-                  className={`w-full rounded px-2 py-1 text-left ${
-                    r === room ? "bg-blue-600" : "hover:bg-gray-700"
-                  }`}
-                >
-                   {r}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </aside>
+      {" "}
+      <aside className="w-48 border-r p-3">
+        <h2 className="mb-2 font-bold">Rooms</h2>
+        <ul className="flex flex-col gap-1">
+          {rooms.map((r) => (
+            <li key={r}>
+              <button
+                onClick={() => ChangeRoom("join", r)}
+                className={`w-full rounded px-2 py-1 text-left ${
+                  r === room ? "bg-blue-600" : "hover:bg-gray-700"
+                }`}
+              >
+                {r}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </aside>
       <div className=" flex h-screen flex-col gap-4 p-4  justify-center  w-full ">
-        
         <h1 className="text-xl font-bold">
           Chat as {name} in {room}
         </h1>
